@@ -1,0 +1,1861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hanfang, Liang - Research & Innovation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/renderers/CSS2DRenderer.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-bg: #000000;
+            --secondary-bg: #0a0a0a;
+            --text-primary: #ffffff;
+            --text-secondary: #999999;
+            --accent: #ffffff;
+            --glow: rgba(255, 255, 255, 0.5);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            cursor: none;
+        }
+
+        /* Custom Cursor */
+        .cursor {
+            width: 20px;
+            height: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            transition: all 0.1s ease;
+            z-index: 10000;
+            mix-blend-mode: difference;
+        }
+
+        .cursor-follower {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            z-index: 9999;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 30px 50px;
+            z-index: 1000;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        nav.scrolled {
+            padding: 20px 50px;
+            background: rgba(0,0,0,0.95);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 2px;
+            opacity: 0;
+            animation: fadeInUp 1s forwards;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 40px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            position: relative;
+            opacity: 0;
+            animation: fadeInUp 1s forwards;
+            animation-delay: calc(var(--delay) * 0.1s);
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: var(--text-primary);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after,
+        .nav-links a.active::after {
+            width: 100%;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            text-align: center;
+            z-index: 2;
+            max-width: 1200px;
+            padding: 0 40px;
+        }
+
+        .hero h1 {
+            font-size: clamp(40px, 8vw, 120px);
+            font-weight: 200;
+            letter-spacing: -2px;
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: fadeInUp 1.5s forwards;
+            animation-delay: 0.5s;
+        }
+
+        .hero .subtitle {
+            font-size: 18px;
+            color: var(--text-secondary);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 40px;
+            opacity: 0;
+            animation: fadeInUp 1.5s forwards;
+            animation-delay: 0.7s;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 15px 40px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: transparent;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeInUp 1.5s forwards;
+            animation-delay: 0.9s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-button:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Sunrise Light System - Replacing scan effect */
+        .sunrise-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .sunrise-glow {
+            position: absolute;
+            top: -260px;
+            left: 50%;
+            transform: translateX(-50%) scale(0.8);
+            width: 140vw;
+            height: 720px;
+            background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.15) 0%, rgba(100, 150, 255, 0.05) 40%, transparent 70%);
+            opacity: 0;
+            filter: blur(80px);
+            transition: opacity 0.1s ease-out, transform 0.1s ease-out;
+            will-change: opacity, transform;
+        }
+
+        .sunrise-beam {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+            opacity: 0;
+            box-shadow: 0 0 50px rgba(255,255,255,0.5);
+            transition: opacity 0.5s ease;
+        }
+
+        /* Glow Orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .orb1 {
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.2), transparent);
+            top: -300px;
+            right: -300px;
+            animation-delay: 0s;
+        }
+
+        .orb2 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1), transparent);
+            bottom: -200px;
+            left: -200px;
+            animation-delay: 5s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+
+        /* Sections */
+        .section {
+            min-height: 100vh;
+            padding: 100px 50px;
+            position: relative;
+        }
+
+        .section-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section h2 {
+            font-size: 48px;
+            font-weight: 200;
+            margin-bottom: 40px;
+            letter-spacing: -1px;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease;
+        }
+
+        .section h2.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .section p {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        /* Grid System */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .card {
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-5px);
+        }
+
+        .card h3 {
+            margin-bottom: 15px;
+            font-weight: 300;
+        }
+
+        /* Publications */
+        .publication-item {
+            padding: 30px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+
+        .publication-item.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .publication-item:hover {
+            padding-left: 20px;
+            border-left: 2px solid var(--accent);
+        }
+
+        .publication-header {
+            cursor: pointer;
+        }
+
+        .publication-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+            transition: color 0.3s ease;
+        }
+
+        .publication-header:hover .publication-title {
+            color: var(--accent);
+        }
+
+        .publication-authors {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .publication-venue {
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+            margin-bottom: 10px;
+        }
+
+        .publication-links {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .publication-link {
+            display: inline-block;
+            padding: 5px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .publication-link:hover {
+            background: var(--accent);
+            color: #000;
+            transform: translateY(-2px);
+        }
+
+        .publication-details {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .publication-item.expanded .publication-details {
+            opacity: 1;
+            max-height: 1000px;
+        }
+
+        .publication-abstract {
+            margin-bottom: 20px;
+        }
+
+        .publication-abstract p {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .publication-images {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .publication-images img {
+            width: 300px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        .publication-images img:hover {
+            transform: scale(1.05);
+        }
+
+        /* Conference Timeline Section */
+        .grid-container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 100px;
+            align-items: center;
+            margin-top: 50px;
+        }
+
+        .conf-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .conf-card {
+            padding: 25px;
+            border-bottom: 1px solid #222;
+            cursor: pointer;
+            transition: all 0.35s ease;
+            opacity: 0.45;
+            user-select: none;
+        }
+
+        .conf-card:hover,
+        .conf-card.active {
+            opacity: 1;
+            border-bottom-color: #fff;
+            transform: translateX(10px);
+        }
+
+        .conf-card h3 {
+            font-size: 20px;
+            font-weight: 300;
+            margin-bottom: 5px;
+        }
+
+        .conf-card p {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        #globe-container {
+            width: 100%;
+            height: 700px;
+            position: relative;
+        }
+
+        #globe-container canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            outline: none;
+            cursor: grab;
+        }
+
+        #globe-container canvas:active {
+            cursor: grabbing;
+        }
+
+        .title-large {
+            font-size: 40px;
+            font-weight: 100;
+            letter-spacing: 2px;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding: 20px 0;
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+
+        .timeline-item.visible {
+            opacity: 1;
+            transform: translateX(0);
+            transition: all 0.6s ease;
+            transition-delay: calc(var(--order) * 0.1s);
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -45px;
+            top: 30px;
+            width: 10px;
+            height: 10px;
+            background: var(--accent);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-item:hover {
+            transform: translateX(10px);
+        }
+
+        .timeline-item:hover::before {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .timeline-actions {
+            margin-top: 15px;
+        }
+
+        .view-details-btn {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .view-details-btn:hover {
+            background: var(--accent);
+            color: var(--background);
+        }
+
+        .timeline-details {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border-left: 3px solid var(--accent);
+            display: none;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        .timeline-details.active {
+            display: block;
+        }
+
+        .details-content h3 {
+            margin-top: 0;
+            color: var(--accent);
+            font-size: 18px;
+        }
+
+        .details-content p {
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .details-content a {
+            color: var(--accent);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .details-content a:hover {
+            text-decoration: underline;
+        }
+
+        .certificate-preview {
+            margin-top: 20px;
+        }
+
+        .view-certificate-btn {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .view-certificate-btn:hover {
+            background: var(--accent);
+            color: var(--background);
+        }
+
+        .certificate-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            display: none;
+        }
+
+        .certificate-modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--background);
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+
+        .close-modal:hover {
+            color: var(--accent);
+        }
+
+        .certificate-image {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .placeholder-certificate {
+            padding: 40px;
+            background: linear-gradient(135deg, rgba(255, 122, 24, 0.1), rgba(255, 122, 24, 0.05));
+            border: 1px solid rgba(255, 122, 24, 0.2);
+            border-radius: 4px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .placeholder-certificate p {
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            color: var(--text-primary);
+        }
+
+        .placeholder-certificate p:first-child {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .timeline-item {
+                padding-left: 20px;
+            }
+
+            .timeline-details {
+                padding: 15px;
+            }
+
+            .modal-content {
+                padding: 20px;
+                width: 95%;
+            }
+
+            .placeholder-certificate {
+                padding: 20px;
+            }
+        }
+        }
+
+        .timeline-date {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .timeline-title {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .timeline-description {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* Contact */
+        .contact-links {
+            display: flex;
+            gap: 30px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .contact-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .contact-links a:hover {
+            color: var(--text-primary);
+        }
+
+        /* Scroll Indicator */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+        }
+
+        .scroll-indicator::before {
+            content: '';
+            display: block;
+            width: 20px;
+            height: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .scroll-indicator::after {
+            content: '';
+            display: block;
+            width: 3px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 2px;
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: scroll 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(10px); }
+        }
+
+        @keyframes scroll {
+            0% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+        }
+
+        /* Colossus Text Effect */
+        .colossus-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(80px, 15vw, 200px);
+            font-weight: 100;
+            letter-spacing: 30px;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 9998;
+            mix-blend-mode: difference;
+            transition: opacity 2s ease;
+            text-align: center;
+            margin-left: 15px;
+        }
+
+        .colossus-text.active {
+            opacity: 0.1;
+        }
+
+        /* Edge Glow Effects */
+        .edge-glow-top, .edge-glow-bottom {
+            position: fixed;
+            left: 0;
+            right: 0;
+            height: 400px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1s ease;
+            z-index: 999;
+        }
+
+        .edge-glow-top {
+            top: 0;
+            background: radial-gradient(ellipse at top center, rgba(128, 177, 232, 0.815) 0%, transparent 70%);
+        }
+
+        .edge-glow-bottom {
+            bottom: 0;
+            background: radial-gradient(ellipse at bottom center, rgba(148, 164, 181, 0.815) 0%, transparent 70%);
+        }
+
+        .edge-glow-active {
+            opacity: 1;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+        }
+
+        /* HUD marker label style (like your screenshot) */
+        .globe-label{
+            color:#fff;
+            font-family: ui-sans-serif, system-ui, -apple-system, "Inter", Segoe UI, Roboto, Helvetica, Arial;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            user-select:none;
+            pointer-events:none;
+            transform: translate(10px, -10px); /* slightly offset from anchor */
+        }
+
+        .globe-label .name{
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.2;
+            opacity: 0.95;
+        }
+
+        .globe-label .coords{
+            margin-top: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            opacity: 0.75;
+            letter-spacing: 0.04em;
+            text-transform: none;
+        }
+
+        .globe-label .dot{
+            display:inline-block;
+            width:4px;height:4px;
+            border-radius:50%;
+            background:#fff;
+            opacity:0.9;
+            margin: 0 6px 1px 6px;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            nav {
+                padding: 20px;
+            }
+
+            .nav-links {
+                gap: 20px;
+                font-size: 10px;
+            }
+
+            .hero h1 {
+                font-size: 48px;
+            }
+
+            .section {
+                padding: 50px 20px;
+            }
+
+            .conference-container {
+                grid-template-columns: 1fr;
+            }
+
+            .grid-container {
+                grid-template-columns: 1fr;
+                gap: 50px;
+            }
+
+            .conf-card {
+                padding: 20px;
+            }
+
+            .conf-card h3 {
+                font-size: 18px;
+            }
+
+            .conf-card p {
+                font-size: 11px;
+            }
+
+            #globe-container {
+                height: 400px;
+            }
+
+            .cursor, .cursor-follower {
+                display: none;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .contact-links {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Custom Cursor -->
+    <div class="cursor"></div>
+    <div class="cursor-follower"></div>
+
+    <!-- Sunrise Light Effect -->
+    <div class="sunrise-container">
+        <div class="sunrise-glow" id="sunrise-glow"></div>
+        <div class="sunrise-beam" id="sunrise-beam"></div>
+    </div>
+
+    <!-- Edge Glow Effects -->
+    <div class="edge-glow-top"></div>
+    <div class="edge-glow-bottom"></div>
+
+    <!-- Colossus Background Text -->
+    <div class="colossus-text">CASETROUS</div>
+
+    <!-- Glow Orbs -->
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <div class="logo">HANFANG LIANG</div>
+            <ul class="nav-links">
+                <li><a href="#home" class="active" style="--delay: 1">Home</a></li>
+                <li><a href="#about" style="--delay: 2">About</a></li>
+                <li><a href="#research" style="--delay: 3">Research</a></li>
+                <li><a href="#publications" style="--delay: 4">Publications</a></li>
+                <li><a href="#conferences" style="--delay: 5">Conferences</a></li>
+                <li><a href="#honors" style="--delay: 6">Honors</a></li>
+                <li><a href="#contact" style="--delay: 7">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <!-- <h1>Advancing Neural Architectures</h1> -->
+            <h1>WELCOME TO MY COSMOS</h1>
+            <p class="subtitle">Spatial Understanding · Embodied AI · Robotics</p>
+            <a href="#about" class="cta-button">Journey through My Work</a>
+        </div>
+        <div class="scroll-indicator"></div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="section">
+        <div class="section-content">
+            <h2>About Me</h2>
+            <p>A student researcher navigating the galaxy of future. My mission is to create innovative solutions with a cosmic touch.</p>
+            <div class="grid">
+                <div class="card">
+                    <h3>Short Bio</h3>
+                    <p>Hanfang Liang is a Master’s student in Engineering at Jianghan University. His research interests include UAV trajectory estimation, 3D point cloud processing, and vision-based localization.</p>
+                    <p>Recently, he has been exploring embodied AI and spatial reasoning, with a focus on bridging low-level perception and high-level semantic understanding in multi-modal environments.</p>
+                </div>
+                <div class="card">
+                    <h3>Research Interests</h3>
+                    <p>• Spatial Reasoning</p>
+                    <p>• Embodied AI</p>
+                    <p>• UAV Trajectory Estimation</p>
+                    <p>• Multimodal Learning</p>
+                    <p>• 3D Point Cloud Processing</p>
+                    <p>• Reinforcement Learning</p>
+                </div>
+                <div class="card">
+                    <h3>Education</h3>
+                    <p><strong>Master's degree, in Computer Science</strong><br>
+                    Jianghan University, Wuhan, China. 2025</p>
+                    <p><strong>Bachelor's degree, in Computer Science</strong><br>
+                    Hubei University of Technology, Wuhan, China. 2021</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Research Section -->
+    <section id="research" class="section">
+        <div class="section-content">
+            <h2>Current Research</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Vision-Language Models</h3>
+                    <p>Developing unified architectures that can seamlessly process and understand both visual and textual information for enhanced AI comprehension.</p>
+                </div>
+                <div class="card">
+                    <h3>Efficient Neural Networks</h3>
+                    <p>Creating compact yet powerful neural network architectures that can run on edge devices while maintaining state-of-the-art performance.</p>
+                </div>
+                <div class="card">
+                    <h3>AI Interpretability</h3>
+                    <p>Building tools and methodologies to understand and explain the decision-making processes of complex deep learning models.</p>
+                </div>
+                <div class="card">
+                    <h3>Autonomous Systems</h3>
+                    <p>Advancing the capabilities of autonomous agents through improved perception, planning, and decision-making algorithms.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Publications Section -->
+    <section id="publications" class="section">
+        <div class="section-content">
+            <h2>Selected Publications</h2>
+            <div class="publication-item">
+                <div class="publication-header">
+                    <div class="publication-title">Unsupervised UAV 3D Trajectories Estimation with Sparse Point Clouds</div>
+                    <div class="publication-authors">Hanfang Liang, Yizhuo Yang, Jinming Hu, Jianfei Yang, Fen Liu, Shenghai Yuan.</div>
+                    <div class="publication-venue">ICASSP 2025 (Oral Presentation)</div>
+                    <div class="publication-links">
+                        <a href="#" class="publication-link">Paper</a>
+                        <a href="#" class="publication-link">Code</a>
+                        <a href="#" class="publication-link">Slides</a>
+                    </div>
+                </div>
+                <div class="publication-details">
+                    <div class="publication-abstract">
+                        <p>This paper proposes an unsupervised method for UAV 3D trajectory estimation using sparse point clouds. Our approach leverages geometric constraints and temporal consistency to recover accurate trajectories without ground truth labels.</p>
+                    </div>
+                    <div class="publication-images">
+                        <img src="https://via.placeholder.com/300x200?text=Conference+Presentation" alt="ICASSP 2025 Presentation">
+                        <img src="https://via.placeholder.com/300x200?text=Method+Overview" alt="Method Overview">
+                    </div>
+                </div>
+            </div>
+            <div class="publication-item">
+                <div class="publication-header">
+                    <div class="publication-title">Label-Free Long-Horizon 3D UAV Trajectory Prediction via Motion-Aligned RGB and Event Cues</div>
+                    <div class="publication-authors">Hanfang Liang, Shenghai Yuan, Fen Liu, Yizhuo Yang, Bing Wang, Shi Huang, Jin Chenyang. </div>
+                    <div class="publication-venue">IEEE Transactions on Robotics (T-RO) (Under Review)</div>
+                    <div class="publication-links">
+                        <a href="#" class="publication-link">Paper</a>
+                        <a href="#" class="publication-link">Code</a>
+                    </div>
+                </div>
+                <div class="publication-details">
+                    <div class="publication-abstract">
+                        <p>This work introduces a label-free approach for long-horizon 3D UAV trajectory prediction by fusing motion-aligned RGB and event camera data. Our method achieves state-of-the-art performance on several benchmark datasets.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="publication-item">
+                <div class="publication-header">
+                    <div class="publication-title">CETUS: Causal Event-Driven Temporal Modeling With Unified Variable-Rate Scheduling</div>
+                    <div class="publication-authors">Hanfang Liang, Bing Wang, Shizhen Zhang, Wen Jiang, Yizhuo Yang, Weixiang Guo, Shenghai Yuan</div>
+                    <div class="publication-venue">ICRA 2026</div>
+                    <div class="publication-links">
+                        <a href="#" class="publication-link">Paper</a>
+                        <a href="#" class="publication-link">Code</a>
+                        <a href="#" class="publication-link">Slides</a>
+                    </div>
+                </div>
+                <div class="publication-details">
+                    <div class="publication-abstract">
+                        <p>CETUS is a novel causal event-driven temporal modeling framework with unified variable-rate scheduling. It efficiently processes event data while capturing long-term dependencies in temporal sequences.</p>
+                    </div>
+                    <div class="publication-images">
+                        <img src="https://via.placeholder.com/300x200?text=ICRA+2026+Presentation" alt="ICRA 2026 Presentation">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Conference Timeline Section -->
+    <section id="conferences" class="section">
+        <div class="section-content">
+            <h2 class="title-large">Conference Timeline</h2>
+            <div class="grid-container">
+                <div class="conf-list">
+                    <div class="conf-card active" data-id="neurips2024" data-lat="37.7749" data-lng="-122.4194">
+                        <h3>NeurIPS 2024</h3>
+                        <p>San Francisco, USA • December 9-15, 2024</p>
+                    </div>
+                    <div class="conf-card" data-id="icml2024" data-lat="48.8566" data-lng="2.3522">
+                        <h3>ICML 2024</h3>
+                        <p>Paris, France • July 21-27, 2024</p>
+                    </div>
+                    <div class="conf-card" data-id="cvpr2024" data-lat="35.6762" data-lng="139.6503">
+                        <h3>CVPR 2024</h3>
+                        <p>Tokyo, Japan • June 17-21, 2024</p>
+                    </div>
+                    <div class="conf-card" data-id="iclr2024" data-lat="51.5074" data-lng="-0.1278">
+                        <h3>ICLR 2024</h3>
+                        <p>London, UK • May 7-11, 2024</p>
+                    </div>
+                    <div class="conf-card" data-id="aaai2024" data-lat="1.3521" data-lng="103.8198">
+                        <h3>AAAI 2024</h3>
+                        <p>Singapore • February 20-27, 2024</p>
+                    </div>
+                </div>
+                <div id="globe-container"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Honors Section -->
+    <section id="honors" class="section">
+        <div class="section-content">
+            <h2>Honors & Awards</h2>
+            <div class="timeline">
+                <div class="timeline-item" style="--order: 1" data-honor-id="honor-1">
+                    <div class="timeline-date">2022</div>
+                    <div class="timeline-title">The 8th China Graduate Future Flight Vehicle Innovation Competition</div>
+                    <div class="timeline-description">Awarded the National Second Prize in Competition</div>
+                    <div class="timeline-description">Participated in the design of spherical aircraft</div>
+                    <div class="timeline-actions">
+                        <button class="view-details-btn">View Details</button>
+                    </div>
+                    <div class="timeline-details">
+                        <div class="details-content">
+                            <h3>The 8th China Graduate Future Flight Vehicle Innovation Competition</h3>
+                            <p><strong>Year:</strong> 2022</p>
+                            <p><strong>Award:</strong> National Second Prize</p>
+                            <p><strong>Description:</strong> Participated in the design of spherical aircraft with innovative flight control systems. The project focused on developing a compact, maneuverable aircraft capable of stable flight in various environments.</p>
+                            <p><strong>Competition Link:</strong> <a href="#" target="_blank">Official Competition Website</a></p>
+                            <div class="certificate-preview">
+                                <button class="view-certificate-btn">View Certificate</button>
+                                <div class="certificate-modal">
+                                    <div class="modal-content">
+                                        <span class="close-modal">&times;</span>
+                                        <h4>Certificate Preview</h4>
+                                        <div class="certificate-image">
+                                            <!-- Certificate image placeholder -->
+                                            <div class="placeholder-certificate">
+                                                <p>Certificate of Achievement</p>
+                                                <p>Awarded to Liang Hanfang</p>
+                                                <p>National Second Prize</p>
+                                                <p>The 8th China Graduate Future Flight Vehicle Innovation Competition</p>
+                                                <p>2022</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="timeline-item" style="--order: 2" data-honor-id="honor-2">
+                    <div class="timeline-date">2024</div>
+                    <div class="timeline-title">The 7th UG2 Challenge Competition in CVPR</div>
+                    <div class="timeline-description">Ranked 4th in UAV Tracking and Pose-estimation track</div>
+                    <div class="timeline-description">Demonstrated expertise in real-time data clustering and machine learning algorithms for UAV applications</div>
+                    <div class="timeline-actions">
+                        <button class="view-details-btn">View Details</button>
+                    </div>
+                    <div class="timeline-details">
+                        <div class="details-content">
+                            <h3>The 7th UG2 Challenge Competition in CVPR</h3>
+                            <p><strong>Year:</strong> 2024</p>
+                            <p><strong>Award:</strong> Ranked 4th in UAV Tracking and Pose-estimation track</p>
+                            <p><strong>Description:</strong> Developed advanced algorithms for real-time UAV tracking and pose estimation, demonstrating expertise in computer vision, machine learning, and robotics. The solution achieved high accuracy and efficiency in challenging environments.</p>
+                            <p><strong>Competition Link:</strong> <a href="#" target="_blank">CVPR 2024 UG2 Challenge</a></p>
+                            <div class="certificate-preview">
+                                <button class="view-certificate-btn">View Certificate</button>
+                                <div class="certificate-modal">
+                                    <div class="modal-content">
+                                        <span class="close-modal">&times;</span>
+                                        <h4>Certificate Preview</h4>
+                                        <div class="certificate-image">
+                                            <!-- Certificate image placeholder -->
+                                            <div class="placeholder-certificate">
+                                                <p>Certificate of Achievement</p>
+                                                <p>Awarded to Liang Hanfang</p>
+                                                <p>4th Place</p>
+                                                <p>UG2 Challenge Competition in CVPR 2024</p>
+                                                <p>UAV Tracking and Pose-estimation Track</p>
+                                                <p>2024</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="timeline-item" style="--order: 3" data-honor-id="honor-3">
+                    <div class="timeline-date">2025</div>
+                    <div class="timeline-title">The 11th China Graduate Future Flight Vehicle Innovation Competition</div>
+                    <div class="timeline-description">Awarded the National Third Prize in Competition</div>
+                    <div class="timeline-actions">
+                        <button class="view-details-btn">View Details</button>
+                    </div>
+                    <div class="timeline-details">
+                        <div class="details-content">
+                            <h3>The 11th China Graduate Future Flight Vehicle Innovation Competition</h3>
+                            <p><strong>Year:</strong> 2025</p>
+                            <p><strong>Award:</strong> National Third Prize</p>
+                            <p><strong>Description:</strong> Continued research in advanced flight vehicle design, focusing on autonomous navigation systems and energy-efficient propulsion. The project integrated cutting-edge technologies to enhance flight performance and reliability.</p>
+                            <p><strong>Competition Link:</strong> <a href="#" target="_blank">Official Competition Website</a></p>
+                            <div class="certificate-preview">
+                                <button class="view-certificate-btn">View Certificate</button>
+                                <div class="certificate-modal">
+                                    <div class="modal-content">
+                                        <span class="close-modal">&times;</span>
+                                        <h4>Certificate Preview</h4>
+                                        <div class="certificate-image">
+                                            <!-- Certificate image placeholder -->
+                                            <div class="placeholder-certificate">
+                                                <p>Certificate of Achievement</p>
+                                                <p>Awarded to Liang Hanfang</p>
+                                                <p>National Third Prize</p>
+                                                <p>The 11th China Graduate Future Flight Vehicle Innovation Competition</p>
+                                                <p>2025</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="section">
+        <div class="section-content">
+            <h2>Sent A Signal</h2>
+            <p>Beam a message across the galaxy.</p>
+            <div class="contact-links">
+                <a href="mailto:lhf.liang@gmail.com">Channel: lhf.liang@gmail.com</a>
+                <a href="https://scholar.google.com/citations?user=2frqpaIAAAAJ&hl=zh-CN" target="_blank">Google Scholar</a>
+                <a href="https://github.com/lianghanfang" target="_blank">GitHub</a>
+                <!-- <a href="https://twitter.com" target="_blank">Twitter</a> -->
+                <a href="cv.pdf" target="_blank">Download CV</a>
+            </div>
+            <p style="margin-top: 40px; font-size: 14px;">
+                Office: J15, Room B608<br>
+                Jianghan University<br>
+                SanJiao Lake Road 8<br>
+                Wuhan, Hubei 430072
+            </p>
+        </div>
+    </section>
+
+    <script>
+        // Custom cursor
+        const cursor = document.querySelector('.cursor');
+        const follower = document.querySelector('.cursor-follower');
+
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+            
+            setTimeout(() => {
+                follower.style.left = e.clientX + 'px';
+                follower.style.top = e.clientY + 'px';
+            }, 0);
+        });
+
+        // Sunrise Light Effect Control
+        const sunriseGlow = document.getElementById('sunrise-glow');
+        const sunriseBeam = document.getElementById('sunrise-beam');
+
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+            const height = window.innerHeight;
+            
+            let progress = Math.min(scrolled / (height * 0.8), 1);
+            
+            sunriseGlow.style.opacity = progress;
+            sunriseGlow.style.transform = `translateX(-50%) scale(${0.8 + progress * 0.4})`;
+            
+            if(progress > 0.2) {
+                sunriseBeam.style.opacity = progress * 0.5;
+            } else {
+                sunriseBeam.style.opacity = 0;
+            }
+        });
+
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Navigation scroll effect
+        const nav = document.querySelector('nav');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 100) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        // Active nav link
+        const sections = document.querySelectorAll('.section, .hero, .conference-section');
+        const navLinks = document.querySelectorAll('.nav-links a');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= sectionTop - 200) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // Publication toggle functionality
+        document.querySelectorAll('.publication-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const publicationItem = header.parentElement;
+                publicationItem.classList.toggle('expanded');
+            });
+        });
+
+        // Intersection Observer
+        const observerOptions = {
+            threshold: 0.2,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.querySelectorAll('h2, .card, .publication-item, .timeline-item, .conference-item').forEach(el => {
+                        el.classList.add('visible');
+                    });
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.section, .conference-section').forEach(section => {
+            observer.observe(section);
+        });
+
+        // Edge Glow and Colossus Text
+        const edgeGlowTop = document.querySelector('.edge-glow-top');
+        const edgeGlowBottom = document.querySelector('.edge-glow-bottom');
+        const colossusText = document.querySelector('.colossus-text');
+        
+        window.addEventListener('scroll', () => {
+            const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollPosition = window.scrollY;
+            const scrollPercentage = scrollPosition / scrollHeight;
+            
+            if (scrollPosition < 50) {
+                edgeGlowTop.classList.add('edge-glow-active');
+                colossusText.classList.add('active');
+            } else {
+                edgeGlowTop.classList.remove('edge-glow-active');
+                colossusText.classList.remove('active');
+            }
+            
+            if (scrollPercentage > 0.95) {
+                edgeGlowBottom.classList.add('edge-glow-active');
+            } else {
+                edgeGlowBottom.classList.remove('edge-glow-active');
+            }
+        });
+
+        if (window.scrollY < 50) {
+            edgeGlowTop.classList.add('edge-glow-active');
+            colossusText.classList.add('active');
+        }
+
+        // Three.js Globe with precise positioning from gpt.html
+        const container = document.getElementById('globe-container');
+        let scene, camera, renderer, globeGroup, markerGroup, points, labelRenderer;
+
+        // Rotation state
+        let spinY = 0;
+        let dragRotX = 0, dragRotY = 0;
+        let velX = 0, velY = 0;
+        let isDragging = false;
+        let targetOffsetY = 0;
+        let targetOffsetX = 0;
+        let snapping = false; // 是否正在吸附到目标
+        let lastX = 0, lastY = 0;
+
+        function latLngToVec3(lat, lng, r) {
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (lng + 180) * (Math.PI / 180);
+            const x = -r * Math.sin(phi) * Math.cos(theta);
+            const y = r * Math.cos(phi);
+            const z = r * Math.sin(phi) * Math.sin(theta);
+            return new THREE.Vector3(x, y, z);
+        }
+
+        function initGlobe() {
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(
+                40,
+                container.clientWidth / container.clientHeight,
+                0.1,
+                1000
+            );
+            camera.position.set(0, 0, 4);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            // --- add CSS2DRenderer for DOM labels ---
+            labelRenderer = new THREE.CSS2DRenderer();
+            labelRenderer.setSize(container.clientWidth, container.clientHeight);
+            labelRenderer.domElement.style.position = "absolute";
+            labelRenderer.domElement.style.left = "0";
+            labelRenderer.domElement.style.top = "0";
+            labelRenderer.domElement.style.pointerEvents = "none";
+            container.appendChild(labelRenderer.domElement);
+
+            globeGroup = new THREE.Group();
+            scene.add(globeGroup);
+
+            markerGroup = new THREE.Group();
+            globeGroup.add(markerGroup);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+
+            const loader = new THREE.TextureLoader();
+            loader.setCrossOrigin("anonymous");
+
+            loader.load(
+                "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_specular_2048.jpg",
+                (texture) => {
+                    createParticleGlobeFromSpecular(texture);
+                    addMarkers();
+                    setupInteractions();
+                    animate();
+                }
+            );
+
+            window.addEventListener("resize", resizeGlobe);
+        }
+
+        function resizeGlobe() {
+            if (!renderer || !camera) return;
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+            labelRenderer.setSize(w, h);
+        }
+
+        function createParticleGlobeFromSpecular(texture) {
+            const c = document.createElement("canvas");
+            const ctx = c.getContext("2d", { willReadFrequently: true });
+
+            const W = 1024, H = 512;
+            c.width = W; c.height = H;
+            ctx.drawImage(texture.image, 0, 0, W, H);
+            const data = ctx.getImageData(0, 0, W, H).data;
+
+            const radius = 1.2;
+            const positions = [];
+
+            const step = 4;
+            const landThreshold = 55;
+
+            for (let y = 0; y < H; y += step) {
+                for (let x = 0; x < W; x += step) {
+                    const idx = (y * W + x) * 4;
+                    const val = data[idx];
+
+                    if (val < landThreshold) {
+                        const u = x / (W - 1);
+                        const v = y / (H - 1);
+
+                        const lat = 90 - v * 180;
+                        const lng = u * 360 - 180;
+
+                        const jLat = lat + (Math.random() - 0.5) * 0.35;
+                        const jLng = lng + (Math.random() - 0.5) * 0.35;
+
+                        const p = latLngToVec3(jLat, jLng, radius);
+                        positions.push(p.x, p.y, p.z);
+                    }
+                }
+            }
+
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+
+            const mat = new THREE.PointsMaterial({
+                size: 0.012,
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.65,
+                depthWrite: false
+            });
+
+            points = new THREE.Points(geo, mat);
+            globeGroup.add(points);
+        }
+
+        function formatLatLng(lat, lng){
+            const ns = lat >= 0 ? "N" : "S";
+            const ew = lng >= 0 ? "E" : "W";
+            return `${Math.abs(lat).toFixed(4)}°${ns}, ${Math.abs(lng).toFixed(4)}°${ew}`;
+        }
+
+        function makeOrangeSquareSprite(){
+            // sprite material (orange square)
+            const mat = new THREE.SpriteMaterial({
+                color: 0xff7a18,   // orange
+                opacity: 1.0,
+                transparent: true,
+                depthWrite: false
+            });
+            const sp = new THREE.Sprite(mat);
+            sp.scale.set(0.09, 0.09, 1); // square size (tune)
+            return sp;
+        }
+
+        function makeLabelDOM(name, lat, lng){
+            const div = document.createElement("div");
+            div.className = "globe-label";
+            div.innerHTML = `
+                <div class="name">${name}</div>
+                <div class="coords">${formatLatLng(lat, lng)}</div>
+            `;
+            return new THREE.CSS2DObject(div);
+        }
+
+        function addMarkers(){
+            markerGroup.clear();
+
+            document.querySelectorAll(".conference-item, .conf-card").forEach((card) => {
+                // 兼容你现在类名 conference-item / conf-card
+                const lat = parseFloat(card.dataset.lat);
+                const lng = parseFloat(card.dataset.lng);
+                const name = (card.querySelector("h3")?.textContent || card.textContent || "LOCATION").trim();
+
+                const surface = latLngToVec3(lat, lng, 1.23);
+                const normal = surface.clone().normalize();
+
+                // 1) orange square at surface (slightly above)
+                const square = makeOrangeSquareSprite();
+                square.position.copy(surface.clone().add(normal.clone().multiplyScalar(0.02)));
+
+                // 2) label anchor position (like screenshot: off to the side)
+                // pick a tangent direction so labels spread outward
+                const up = new THREE.Vector3(0,1,0);
+                let tangent = new THREE.Vector3().crossVectors(up, normal);
+                if (tangent.lengthSq() < 1e-6) tangent = new THREE.Vector3(1,0,0);
+                tangent.normalize();
+
+                const labelPos = surface.clone()
+                    .add(normal.clone().multiplyScalar(0.35))    // lift off globe
+                    .add(tangent.clone().multiplyScalar(0.25));  // sideways offset
+
+                const labelObj = makeLabelDOM(name, lat, lng);
+                labelObj.position.copy(labelPos);
+
+                // 3) leader line from square -> label
+                const linePts = [
+                    surface.clone().add(normal.clone().multiplyScalar(0.03)),
+                    labelPos
+                ];
+                const lineGeo = new THREE.BufferGeometry().setFromPoints(linePts);
+                const lineMat = new THREE.LineBasicMaterial({
+                    color: 0xff7a18,
+                    transparent: true,
+                    opacity: 0.9,
+                    depthWrite: false
+                });
+                const leader = new THREE.Line(lineGeo, lineMat);
+
+                markerGroup.add(square);
+                markerGroup.add(leader);
+                markerGroup.add(labelObj);
+
+                // 让点击卡片时还能"吸附到点"：给 card 存一下目标角信息可选
+                card.__marker_surface = surface; // 可选：方便你之后做更精准定位/高亮
+            });
+        }
+
+        function setupInteractions() {
+            const el = renderer.domElement;
+
+            el.addEventListener("pointerdown", (e) => {
+                isDragging = true;
+                el.setPointerCapture(e.pointerId);
+                lastX = e.clientX; lastY = e.clientY;
+            });
+
+            el.addEventListener("pointermove", (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - lastX;
+                const dy = e.clientY - lastY;
+                lastX = e.clientX; lastY = e.clientY;
+
+                const rotSpeed = 0.005;
+                dragRotY += dx * rotSpeed;
+                dragRotX += dy * rotSpeed;
+
+                dragRotX = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, dragRotX));
+
+                velY = dx * rotSpeed;
+                velX = dy * rotSpeed;
+            });
+
+            function endDrag() {
+                isDragging = false;
+            }
+            el.addEventListener("pointerup", endDrag);
+            el.addEventListener("pointercancel", endDrag);
+
+    
+
+            // click conf => rotate that marker to face camera precisely
+            document.querySelectorAll(".conf-card").forEach((card)=>{
+                card.addEventListener("click", function(){
+                document.querySelectorAll(".conf-card").forEach(c=>c.classList.remove("active"));
+                this.classList.add("active");
+
+                const lat = parseFloat(this.dataset.lat);
+                const lng = parseFloat(this.dataset.lng);
+
+                // compute that point's x,z in globe local coords
+                const phi = (90 - lat) * (Math.PI / 180);
+                const theta = (lng + 180) * (Math.PI / 180);
+                const r = 1.62;
+
+                const x = -r * Math.sin(phi) * Math.cos(theta);
+                const z =  r * Math.sin(phi) * Math.sin(theta);
+
+                // ✅ exact Y rotation that brings point to front (x' = 0, z' > 0)
+                let targetAngle = Math.atan2(-x, z);
+
+                // 目标：spinY + dragRotY ≈ targetAngle
+                let desiredOffsetY = targetAngle - spinY;
+
+                // wrap 到最短路径
+                const twoPI = Math.PI * 2;
+                while (desiredOffsetY - dragRotY > Math.PI) desiredOffsetY -= twoPI;
+                while (desiredOffsetY - dragRotY < -Math.PI) desiredOffsetY += twoPI;
+
+                targetOffsetY = desiredOffsetY;
+
+                // 可选：给一点纬度方向的倾斜（让高纬度稍微仰/俯）
+                targetOffsetX = (lat / 90) * (Math.PI / 7);
+
+                // 开启吸附模式
+                snapping = true;
+
+                // 吸附时立刻清空惯性，避免“打架”
+                velX = 0;
+                velY = 0;
+                });
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            spinY += 0.0012;
+
+            const damping = 0.92;
+
+            if (snapping && !isDragging) {
+                const a = 0.10; // 吸附速度（0.08~0.15 都可以）
+
+                dragRotY += (targetOffsetY - dragRotY) * a;
+                dragRotX += (targetOffsetX - dragRotX) * a;
+
+                // 接近目标就停止吸附
+                if (
+                    Math.abs(targetOffsetY - dragRotY) < 0.002 &&
+                    Math.abs(targetOffsetX - dragRotX) < 0.002
+                ) {
+                    snapping = false;
+                }
+            } else if (!isDragging) {
+                // 原来的惯性逻辑
+                dragRotY += velY;
+                dragRotX += velX;
+                velY *= damping;
+                velX *= damping;
+            }
+
+            globeGroup.rotation.y = spinY + dragRotY;
+            globeGroup.rotation.x = dragRotX;
+
+            // 让橙色方块永远保持"屏幕大小"更像 UI
+            markerGroup.traverse(o=>{
+                if (o.isSprite) o.quaternion.copy(camera.quaternion);
+            });
+
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+        }
+
+        // Initialize globe when section is visible
+        const globeObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !scene) {
+                    initGlobe();
+                }
+            });
+        }, { threshold: 0.1 });
+
+        globeObserver.observe(container);
+
+        // Timeline Interactions
+        document.addEventListener('DOMContentLoaded', function() {
+            // View Details buttons
+            const viewDetailsButtons = document.querySelectorAll('.view-details-btn');
+            viewDetailsButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const timelineItem = this.closest('.timeline-item');
+                    const detailsPanel = timelineItem.querySelector('.timeline-details');
+                    detailsPanel.classList.toggle('active');
+                    
+                    // Toggle button text
+                    if (detailsPanel.classList.contains('active')) {
+                        this.textContent = 'Hide Details';
+                    } else {
+                        this.textContent = 'View Details';
+                    }
+                });
+            });
+
+            // View Certificate buttons
+            const viewCertificateButtons = document.querySelectorAll('.view-certificate-btn');
+            viewCertificateButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const timelineItem = this.closest('.timeline-item');
+                    const modalId = timelineItem.getAttribute('data-honor-id') + '-modal';
+                    const modal = document.getElementById(modalId);
+                    modal.classList.add('active');
+                });
+            });
+
+            // Close modal buttons
+            const closeModalButtons = document.querySelectorAll('.close-modal');
+            closeModalButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const modal = this.closest('.certificate-modal');
+                    modal.classList.remove('active');
+                });
+            });
+
+            // Close modal when clicking outside
+            const modals = document.querySelectorAll('.certificate-modal');
+            modals.forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        modal.classList.remove('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
